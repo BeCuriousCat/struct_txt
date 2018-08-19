@@ -1,17 +1,23 @@
-#coding=gbk
-import Tools
+#coding=utf-8
+import Toolbox
 import re
+import os
 
 
 class article(object):
 	num = 0
-	rule_list = Tools.readini("structT.ini")
 
-	def __init__(self, content, title):
+
+	def __init__(self, content, title,rule_list=None):
 		self.title = title+'\n'
 		self.child_list = []
 		self.content = content.replace(' ', '')
 		self.content = re.sub(r'^\s{1,}$', '', self.content)
+		self.rule_list = []
+		if rule_list == None:
+			self.rule_list = Toolbox.readini("structT.ini")
+		else:
+			self.rule_list.extend(rule_list)
 		self.word_count = len(self.content)
 		if article.num == 0:
 			self.Attribute = "root"
@@ -20,13 +26,15 @@ class article(object):
 		else:
 			self.Attribute = "child"
 		article.num += 1
-		self.get_par()
-
+		try:
+			self.get_par()
+		except:
+			pass
 
 	def get_par(self):
 		root_rule_list = []
 		child_rule_list = []
-		root_rule_list.extend(article.rule_list)
+		root_rule_list.extend(self.rule_list)
 		for rule in root_rule_list:
 			reg = re.compile((rule))
 			par_title_list = reg.findall(self.content)
@@ -34,14 +42,14 @@ class article(object):
 				continue
 			else:
 				# child_rule_list.extend(root_rule_list[root_rule_list.index(rule)+1:])
-				article.rule_list.remove(rule)
+				self.rule_list.remove(rule)
 				break
 		# print('\n'.join(par_title_list))
 		if len(par_title_list) != 0 and par_title_list[0] != '':
 			content_list = self.lspilt(par_title_list)
 			if len(content_list) != 0 and content_list[0] != '':
 				for content in content_list[1:]:
-					temp = article(content, par_title_list[content_list[1:].index(content)])
+					temp = article(content, par_title_list[content_list[1:].index(content)],self.rule_list)
 					self.add_child(temp)
 
 
@@ -56,28 +64,46 @@ class article(object):
 		result_list = []
 		content = self.content
 		for poi in poi_list:
-			result_list.append(re.split((poi), content)[0])
-			# print(re.split((poi), content)[0])
+			# print(poi)
+			# print(poi_list)
+			# print(content)
+			result_list.append(content.split(poi)[0])
 			content = poi+content.split(poi)[1]
 		result_list.append(content)
 		return result_list
 
 	def describe(self):
-		print('ÎÄÕÂ±êÌâ£º' + self.title.replace('\n',''))
-		print('ÎÄÕÂ×ÖÊı' + str(self.word_count))
-		print("Ò»¼¶±êÌâ£º"+str(len(self.child_list)))
+		print('æ–‡ç« æ ‡é¢˜:' + self.title.replace('\n', ''))
+		print('æ–‡ç« å­—æ•°:' + str(self.word_count))
+		print("ä¸€çº§æ ‡é¢˜:"+str(len(self.child_list)))
 		print([x.title for x in self.child_list])
 		sec_list = []
 		for x in self.child_list:
 			sec_list = x.child_list + sec_list
-		print("¶ş¼¶±êÌâ£º"+ str(len(sec_list)))
+		print("äºŒçº§æ ‡é¢˜:"+ str(len(sec_list)))
 		print([x.title for x in sec_list])
 
+# #
+# name_list = os.listdir('res/')
+# num = 0
+#
+# for name in name_list:
+# 	title = name.split('.')[0]
+# 	content = Toolbox.readtxtfile("res/"+name)
+# 	try:
+# 		a = article(content, title)
+# 	except:
+# 		num = num + 1
+# print("å¤±è´¥ä¸ªæ•°ï¼š"+str(num))
+# print("æ ·æœ¬ä¸ªæ•°ï¼š"+str(len(name_list)))
+# print("é”™è¯¯ç‡ï¼š"+str(num/len(name_list)))
 
-title = "Ì«Ô­ÊĞÈËÃñÕş¸®°ì¹«Ìü¹ØÓÚ¹æ·¶ÊĞÇø³µÁ¾Í£·Å·şÎñÊÕ·ÑµÄÍ¨Öª-Ì«Ô­ÊĞÈËÃñÕş¸®"
-content = Tools.readtxtfile(title + '.txt')
-a = article(content,title)
-a.describe()
+
+
+# title = "å¤ªåŸå¸‚äººæ°‘æ”¿åºœå…³äºå°å‘å¤ªåŸå¸‚å¦‡å¥³å‘å±•â€œåä¸€äº”â€è§„åˆ’å’Œå„¿ç«¥å‘å±•â€œåä¸€äº”â€è§„åˆ’çš„é€šçŸ¥-å¤ªåŸå¸‚äººæ°‘æ”¿åºœ"
+# content = Toolbox.readtxtfile('res/'+title + '.txt')
+# a = article(content, title)
+# a.describe()
 # print(''.join([x.content for x in a.child_list]))
 
 
